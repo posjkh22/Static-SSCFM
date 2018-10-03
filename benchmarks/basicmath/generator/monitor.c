@@ -1,6 +1,17 @@
 
-#include "IPCFG_TYPE.h"
 
+///////////////////////////////////////////////////////
+///////////////////////////////////////////////////////
+///////////////////////////////////////////////////////
+	
+/*						HEADER						 */
+
+///////////////////////////////////////////////////////
+///////////////////////////////////////////////////////
+///////////////////////////////////////////////////////
+
+/* configures of processing IPCFG */
+#include "IPCFG_TYPE.h"
 
 #ifdef ACES_LIST
 #include "list/aces_list.h"
@@ -14,271 +25,166 @@
 #include "hash/aces_hash.h"
 #endif
 
-
-#include "stack/aces_stack.h"
-
 #include "BBNode.h"
+struct BBNode;
+
+
+/* function stack */
+#include "sstack/aces_sstack.h"
+
+
 #include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+
+/* set priority of monitor thread */
 #include <sched.h>
+
 
 #include "monitor.h"
 
+
+/* debugging for execution time */
 #include <sys/time.h>
+
+
+/* CFE injection */
+#include "CFE_INJECTION.h"
+//#define CFE_INJECTION_ON
+
 
 #define true 1
 #define false 0
 
-struct BBNode;
 
+///////////////////////////////////////////////////////
+///////////////////////////////////////////////////////
+///////////////////////////////////////////////////////
+/*
+					CONFIGURATIONS	
+*/
+///////////////////////////////////////////////////////
+///////////////////////////////////////////////////////
+///////////////////////////////////////////////////////
+
+
+/* Lists of configuration */
+
+/* 1. DEBUG	TYPE */
 //#define ACES_DEBUG
-
 //#define ACES_APP_DEBUG
 //#define ACES_MON_DEBUG
 //#define ACES_MINIMAL_DEBUG
-#define MONITOR_PROCESS_DEBUG
-
-//#define SIGNATURE_QUEUE_SIZE 20
-//#define SIGNATURE_QUEUE_SIZE 100
-//#define SIGNATURE_QUEUE_SIZE 500
-//#define SIGNATURE_QUEUE_SIZE 1000
-//#define SIGNATURE_QUEUE_SIZE 1500
-//#define SIGNATURE_QUEUE_SIZE 2200
-//#define SIGNATURE_QUEUE_SIZE 3000
-//#define SIGNATURE_QUEUE_SIZE 5000
-//#define SIGNATURE_QUEUE_SIZE 150000
-//#define SIGNATURE_QUEUE_SIZE 500000 // 500,000 
-//#define SIGNATURE_QUEUE_SIZE 1000000 // 1,000,000
-//#define SIGNATURE_QUEUE_SIZE 2600000 // 5,000,000 (error)
-//#define SIGNATURE_QUEUE_SIZE 5000000 // 5,000,000 (error)
-#define SIGNATURE_QUEUE_SIZE 12000000 // 5,000,000 (error)
-//#define SIGNATURE_QUEUE_SIZE 6000000
-
-//#define PROG_EXEC_TIME
-#ifdef  PROG_EXEC_TIME
-struct timeval program_begTick;
-struct timeval program_endTick;
-#endif
-
-/* only enqueue */
-//#define ONLY_ENQUEUE
-#ifdef ONLY_ENQUEUE
-unsigned int mon_task_number=0;
-#endif
-
-/* total */
+//#define MONITOR_PROCESS_DEBUG
 
 
+/* 2. signature queue size table */
 
-//#define INIT_OVERHEAD
-#ifdef  INIT_OVERHEAD
+//#define SIGNATURE_QUEUE_SIZE 12000000 	// one
+#define SIGNATURE_QUEUE_SIZE 6000000 	// two
+//#define SIGNATURE_QUEUE_SIZE 4000000 	// three 
+//#define SIGNATURE_QUEUE_SIZE 3000000 	// four 
 
-struct timeval init_begTick;
-struct timeval init_endTick;
-unsigned int total_init_time = 0;
 
-#endif
+/* 3. The maximum number of signature queue	*/
 
-//#define MONITOR_OVERHEAD2
-#ifdef  MONITOR_OVERHEAD2
+#define NUMBER_OF_SIGNATURE_QUEUE 4
 
-struct timeval queue_full_begTick;
-struct timeval queue_full_endTick;
-unsigned int total_queue_full_time = 0;
 
-#endif
-
+/* 4. Set priority of monitor thread */
 
 #define SET_PRIORITY
 //#define SHOW_PRIORITY
 
 
-//#define APP_STACK_POP_OVERHEAD
-#ifdef  APP_STACK_POP_OVERHEAD
 
-struct timeval app_stack_pop_begTick;
-struct timeval app_stack_pop_endTick;
-unsigned int total_app_stack_pop_time = 0;
-
-#endif
-
-//#define APP_STACK_PUSH_OVERHEAD
-#ifdef  APP_STACK_PUSH_OVERHEAD
-
-struct timeval app_stack_push_begTick;
-struct timeval app_stack_push_endTick;
-unsigned int total_app_stack_push_time = 0;
-
-#endif
+///////////////////////////////////////////////////////
+///////////////////////////////////////////////////////
+///////////////////////////////////////////////////////
+/*
+					GLOBAL VARIABLES	
+*/
+///////////////////////////////////////////////////////
+///////////////////////////////////////////////////////
+///////////////////////////////////////////////////////
 
 
-/* copy */
-//#define APP_THREAD_OVERHEAD
-
-//#define APP_COPY1_OVERHEAD
-#ifdef  APP_COPY1_OVERHEAD
-
-struct timeval copy_begTick;
-struct timeval copy_endTick;
-unsigned int total_copy_time = 0;
-
-#endif
-
-//#define APP_IN_COPY1_OVERHEAD
-#ifdef APP_IN_COPY1_OVERHEAD
-
-struct timeval copy1_1_begTick;
-struct timeval copy1_1_endTick;
-unsigned int total_copy1_1_time = 0;
-
-struct timeval copy1_2_begTick;
-struct timeval copy1_2_endTick;
-unsigned int total_copy1_2_time = 0;
-
-struct timeval copy1_3_begTick;
-struct timeval copy1_3_endTick;
-unsigned int total_copy1_3_time = 0;
-
-#endif
-
-//#define APP_IN_IN_COPY1_OVERHEAD
-#ifdef  APP_IN_IN_COPY1_OVERHEAD
-
-struct timeval copy1_2_1_begTick;
-struct timeval copy1_2_1_endTick;
-unsigned int total_copy1_2_1_time = 0;
-
-struct timeval copy1_2_2_begTick;
-struct timeval copy1_2_2_endTick;
-unsigned int total_copy1_2_2_time = 0;
-
-struct timeval copy1_2_3_begTick;
-struct timeval copy1_2_3_endTick;
-unsigned int total_copy1_2_3_time = 0;
-
-#endif
-
-
-//#define APP_COPY2_OVERHEAD
-#ifdef  APP_COPY2_OVERHEAD
-
-struct timeval app_copy2_begTick;
-struct timeval app_copy2_endTick;
-unsigned int total_app_copy2_time = 0;
-
-#endif
-
-
-//#define APP_IPCFG_OVERHEAD
-#ifdef  APP_IPCFG_OVERHEAD
-
-struct timeval ipcfg_begTick;
-struct timeval ipcfg_endTick;
-unsigned int total_ipcfg_time = 0;
-
-#endif
-
-//#define MON_THREAD_OVERHEAD
-#ifdef  MON_THREAD_OVERHEAD
-
-struct timeval thread_creation_begTick;
-struct timeval thread_creation_endTick;
-unsigned int total_thread_creation_time = 0;
-
-#endif
-
-
-
-//#define MONITOR_THREAD_OVERHEAD
-#ifdef MONITOR_THREAD_OVERHEAD
-
-
-struct timeval copy_begTick;
-struct timeval copy_endTick;
-
-struct timeval verify_begTick;
-struct timeval verify_endTick;
-
-struct timeval wait_begTick;
-struct timeval wait_endTick;
-
-
-unsigned int total_copy_time = 0;
-unsigned int total_verify_time = 0;
-unsigned int total_wait_time = 0;
-
-#ifdef MONITOR_THREAD_OVERHEAD_1
-
-struct timeval dequeue_begTick;
-struct timeval dequeue_endTick;
-
-struct timeval verify_1_begTick;
-struct timeval verify_1_endTick;
-
-unsigned int total_dequeue_time = 0;
-unsigned int total_verify_1_time = 0;
-
-#endif
-
-#endif
-
-
-
-INTEGRATED_CFG* p_integrated_CFG = NULL;
-ReturnPointStack* p_app_current_returnPointStack = NULL;
-ReturnPointStack* p_app_prior_returnPointStack = NULL;
-
+/* Application thread: signature enqueue */
 unsigned int current_queue_size = 0;
-
-//unsigned int signature_queue[SIGNATURE_QUEUE_SIZE];
-
 unsigned int* signature_queue;
+unsigned int signature_queue_set[NUMBER_OF_SIGNATURE_QUEUE][SIGNATURE_QUEUE_SIZE];
 
-unsigned int signature_queue_set[4][SIGNATURE_QUEUE_SIZE];
+
+/* Monitor thread: signature verification */
+
+/* 1. monitor thread */
+pthread_t mon_thread;
 unsigned int monitor_process_num = 0;
 
 
-unsigned int leverage_signature = 10;
-
-unsigned int is_signature_queue_full = 0;
-
-unsigned int is_queue_copy_finish = 0;
-unsigned int is_monitor_initialized = 0;
-unsigned int is_monitor_process_finish = 1;
-
-
-/* is_monitor_finished : only for monitor thread */
-unsigned int is_monitor_finished = 0;
-
+/* 2. passing data-type from App to Monitor */
 typedef struct
 {
 	unsigned int* copied_signature_queue;
 	unsigned int copied_signature_queue_size;
-	ReturnPointStack* p_mon_returnPointStack;	
+	// static way
+	unsigned int function_stack_number;
 
 }monitor_dat;
 
+/* 3. IPCFG */
+INTEGRATED_CFG* p_integrated_CFG = NULL;
 
 
 
-pthread_t mon_thread;
+/* Not Used */
+unsigned int leverage_signature = 10;
+unsigned int is_queue_copy_finish = 0;
+unsigned int is_monitor_process_finish = 1;
+unsigned int is_monitor_initialized = 0;
+unsigned int is_monitor_finished = 0;
+unsigned int is_signature_queue_full = 0;
 
-/* monitor */
+
+
+///////////////////////////////////////////////////////
+///////////////////////////////////////////////////////
+///////////////////////////////////////////////////////
+/*
+					MONITOR APIs	
+*/
+///////////////////////////////////////////////////////
+///////////////////////////////////////////////////////
+///////////////////////////////////////////////////////
+
+
+/*
+	Sequence of monitor thread
+	1. monitor_routine -> 2. monitor_process -> 3. deque & verify signature -> 4. Traverse IPCFG
+*/
+
+/* 	Name: monitor_process */
+/*
+	Actual processing in monitor thread  
+*/
 void monitor_process(
 		unsigned int* mon_signature_queue, 
 		unsigned int mon_signature_queue_size,
-		ReturnPointStack* mon_returnPointStack
+		unsigned int function_stack_number
 		)
 {
-#ifdef ACES_MINIMAL_DEBUG
+
+
+	#ifdef ACES_MINIMAL_DEBUG
 	printf(" [monitor] Monitor process starts..\n");
-#endif
+	#endif
 	
 
-	/* BBNode */
+	/* Current & Initial(temporary) BasicBlock Node */
 	BBNode *currentBasicBlock = (BBNode*)malloc(sizeof(BBNode));
+	
+	/* Temporary variable for release memory */
 	BBNode *to_free_currentBasicBlock = currentBasicBlock;
 
 	
@@ -286,50 +192,53 @@ void monitor_process(
 	currentBasicBlock->node_id = 10;
 
 
-#ifdef MONITOR_PROCESS_DEBUG
+	#ifdef MONITOR_PROCESS_DEBUG
 		
-		pid_t pid;
-		pthread_t tid;
-		pid = getpid();
-		tid = pthread_self();
+	pid_t pid;
+	pthread_t tid;
+	pid = getpid();
+	tid = pthread_self();
 		
-		static int monitor_process_num =0;
-		printf(" [Monitor Thread Info]: %d, tid: %u, pid: %u, signature_queue_size: %u\n", ++monitor_process_num, (int)tid, (int)pid, mon_signature_queue_size);
-#endif
+	static int monitor_process_num =0;
+	printf(" [Monitor Thread Info]: %d, tid: %u, pid: %u,\\
+	signature_queue_size: %u, function_stack_number:\\
+	%d, static_stack_size: %d\n", ++monitor_process_num, 
+		(int)tid, (int)pid, mon_signature_queue_size, 
+		function_stack_number, static_show_stack_size(function_stack_number));
+	
+	#endif
 
 
 	/* dequeue and verification */
 	for(int i=0; i< mon_signature_queue_size; i++)
 	{
-		// signature_dequeue
+		/* 	signature_dequeue	*/
 		unsigned int node_id = dequeue_signature(mon_signature_queue, i);
 
-		// signature_verification
-		signature_verification(node_id, &currentBasicBlock, mon_returnPointStack);
+		/* 	signature_verification	*/
+		signature_verification(node_id, &currentBasicBlock, function_stack_number);
 	}
 
 
-
-	/* update leverage_signature */
-	//leverage_signature = copied_signature_queue[copied_signature_queue_size-1];
-
-#ifdef ACES_MINIMAL_DEBUG
+	#ifdef ACES_MINIMAL_DEBUG
 	printf(" [monitor] Monitor process has finished!\n");
-#endif
+	#endif
 
 	free(to_free_currentBasicBlock);
 
 }
 
 
-
-/* monitor */
-// monitor_routine: each monitor_routine
+/* 	Name: monitor_routine */
+/*
+	Configure monitor thread and Get passing data from App thread. 
+*/
 void* monitor_routine(void*arg)
 {	
 
-#ifdef SET_PRIORITY
+	/* Configure the priority of monitor thread: LOW */
 
+	#ifdef SET_PRIORITY
 	int ret;
 
 	pid_t app_pid = getpid();
@@ -338,9 +247,6 @@ void* monitor_routine(void*arg)
 	struct sched_param params2;
 	
 	params1.sched_priority = sched_get_priority_min(SCHED_FIFO);
-	
-	//printf(" max app_thread: %d\n", params.sched_priority);
-
 	ret = pthread_setschedparam(app_thread, SCHED_FIFO, &params1);
 
 	if(ret !=0)
@@ -352,140 +258,90 @@ void* monitor_routine(void*arg)
 	ret = pthread_getschedparam(app_thread, &policy, &params2);
 	policy = sched_getscheduler(app_pid);
 
-#ifdef SHOW_PRIORITY
+	#ifdef SHOW_PRIORITY
 	printf(" - This app policy: %d\n", policy);
 	printf(" - App thread priority: %d\n", params2.sched_priority);
+	#endif
 
-#endif
-
-#endif
-
+	#endif
 
 
-#ifdef MON_THREAD_OVERHEAD
-	gettimeofday(&thread_creation_endTick, NULL);
-	printf(" [Overhead] Thread creation Time: %ld, ", (thread_creation_endTick.tv_sec - thread_creation_begTick.tv_sec) * 1000000 + (thread_creation_endTick.tv_usec - thread_creation_begTick.tv_usec));
-	total_thread_creation_time += ((thread_creation_endTick.tv_sec - thread_creation_begTick.tv_sec) * 1000000 + (thread_creation_endTick.tv_usec - thread_creation_begTick.tv_usec));
-	printf(" [Overhead] Total Thread creation Time: %ld\n", total_thread_creation_time);
-#endif
+	/* Monitor thread information for debugging */
 
 	pid_t pid;
 	pthread_t tid;
 	pid = getpid();
 	tid = pthread_self();
-		
-	monitor_dat* mon_dat = (monitor_dat*)arg;
-	unsigned int* mon_signature_queue = (mon_dat)->copied_signature_queue;
-	unsigned int mon_signature_queue_size = (mon_dat)->copied_signature_queue_size;
-	ReturnPointStack* mon_returnPointStack = (mon_dat)->p_mon_returnPointStack;
-	
 
 
-#ifdef ACES_MINIMAL_DEBUG
-	printf(" [monitor] Thread_routine start: tid[%u](pid[%u]), signature_queue_size: %ld\n", (unsigned int)tid, (unsigned int)pid, mon_signature_queue_size);
-#endif
+	/* Get passing data from App thread */
+	/*
+		1. Signature Queue
+		2. Function Stack
+	*/
+	monitor_dat* mon_dat 					= (monitor_dat*)arg;
+	unsigned int* mon_signature_queue 		= (mon_dat)->copied_signature_queue;
+	unsigned int mon_signature_queue_size 	= (mon_dat)->copied_signature_queue_size;
+	unsigned int function_stack_number 		= (mon_dat)->function_stack_number;
+
+
+	#ifdef ACES_MINIMAL_DEBUG
+	printf(" [monitor] Thread_routine start: \\
+			tid[%u](pid[%u]), signature_queue_size: %ld\n", 
+			(unsigned int)tid, (unsigned int)pid, 
+			mon_signature_queue_size);
+	#endif
+
+
+	/* Run a seqeunce of monitor thread routine */
+	monitor_process(mon_signature_queue, mon_signature_queue_size, function_stack_number);
 
 
 
-#ifdef MONITOR_THREAD_OVERHEAD
-	gettimeofday(&verify_begTick, NULL);
-#endif
-
-	/* copied_signature_queue verification */
-	monitor_process(mon_signature_queue, mon_signature_queue_size, mon_returnPointStack);
-
-
-#ifdef MONITOR_THREAD_OVERHEAD
-	gettimeofday(&verify_endTick, NULL);
-	printf(" [Overhead] Verification Time: %ld, ", (verify_endTick.tv_sec - verify_begTick.tv_sec) * 1000000 + (verify_endTick.tv_usec - verify_begTick.tv_usec));
-	total_verify_time += ((verify_endTick.tv_sec - verify_begTick.tv_sec) * 1000000 + (verify_endTick.tv_usec - verify_begTick.tv_usec));
-	printf(" [Overhead] Total Verification Time: %ld\n", total_verify_time);
-#endif
-
-
-#ifdef ACES_MINIMAL_DEBUG
+	#ifdef ACES_MINIMAL_DEBUG
 	printf(" [monitor] Thread_routine finish: tid[%u](pid[%u])\n", (unsigned int)tid, (unsigned int)pid);
-#endif
+	#endif
 
 
-	/* release copied_queue, returnPoinStack */
-	//free(mon_signature_queue);
-	free(mon_returnPointStack);
+	/* Memory release for passing data from App thread */	
 	free(mon_dat);
+	
 }
 
 
 
-
-/* monitor */
-void initialize_monitor()
-{
-
-	/* generate IPCFG */
-#ifdef ACES_MINIMAL_DEBUG
-	printf(" [monitor] monitor_init!\n");
-#endif	
-	
-#ifdef APP_IPCFG_OVERHEAD
-	gettimeofday(&ipcfg_begTick, NULL);
-#endif
-
-	// Initialize Application-thread function return stack
-	p_app_current_returnPointStack = (Stack* )malloc(sizeof(Stack));
-	InitStack(p_app_current_returnPointStack);
-	
-	p_app_prior_returnPointStack = (Stack* )malloc(sizeof(Stack));
-	InitStack(p_app_prior_returnPointStack);
-
-
-	// Initialize IPCFG
-	initialize_monitor_routine(1);
-
-#ifdef APP_IPCFG_OVERHEAD
-	gettimeofday(&ipcfg_endTick, NULL);
-	printf(" [Overhead-0] IPCFG Generation Time: %ld\n", (ipcfg_endTick.tv_sec - ipcfg_begTick.tv_sec) * 1000000 + (ipcfg_endTick.tv_usec - ipcfg_begTick.tv_usec));
-#endif
-
-
-	
-
-
-
-
-}
-
-
-//////////////////////////////////////////////////////////////////////
-/* 							init_monitor		 					*/
-//////////////////////////////////////////////////////////////////////
-
-
-/* target */
+/* 	Name: init_monitor */
+/*
+	The earlist initialization for CFE monitor	
+	1. Generate & Initialize IPCFG 
+	2. Initialize Function Stack 
+	3. Initialize Signature Queue 
+	4. Set the priority of Application thread: HIGH 
+*/
 void init_monitor()
 {
-#ifdef  INIT_OVERHEAD
-	gettimeofday(&init_begTick, NULL);
-#endif
+	
+	#ifdef ACES_MINIMAL_DEBUG
+	printf(" [monitor] monitor_init!\n");
+	#endif	
+	
+	/* 1. Generate & Initialize IPCFG */
+	initialize_monitor_routine(1);
 
 
-#ifdef  PROG_EXEC_TIME
-	gettimeofday(&program_begTick, NULL);
-#endif
-	initialize_monitor();	
+	/* 2. Initialize Function Stack */
+	for(int i=0; i<NUMBER_OF_SIGNATURE_QUEUE+2; i++)
+	{
+		static_InitStack(i);
+	}
 
+	/* 3. Initialize Signature Queue */
 	signature_queue = signature_queue_set[monitor_process_num];
-	//signature_queue = (unsigned int*)malloc(sizeof(unsigned int) * SIGNATURE_QUEUE_SIZE);
-
-#ifdef  INIT_OVERHEAD
-	gettimeofday(&init_endTick, NULL);
-	printf(" [Overhead-A] init_time: %ld, ", (init_endTick.tv_sec - init_begTick.tv_sec) * 1000000 + (init_endTick.tv_usec - init_begTick.tv_usec));
-	total_init_time += ((init_endTick.tv_sec - init_begTick.tv_sec) * 1000000 + (init_endTick.tv_usec - init_begTick.tv_usec));
-	printf(" [Overhead-A] Total init_time: %ld\n", total_init_time);
-#endif
 
 
-#ifdef SET_PRIORITY
+	/* 4. Set the priority of Application thread: HIGH */
 
+	#ifdef SET_PRIORITY
 	int ret;
 
 	pid_t app_pid = getpid();
@@ -494,9 +350,6 @@ void init_monitor()
 	struct sched_param params2;
 	
 	params1.sched_priority = sched_get_priority_max(SCHED_FIFO);
-	
-	//printf(" max app_thread: %d\n", params.sched_priority);
-
 	ret = pthread_setschedparam(app_thread, SCHED_FIFO, &params1);
 
 	if(ret !=0)
@@ -509,265 +362,144 @@ void init_monitor()
 	policy = sched_getscheduler(app_pid);
 
 
-#ifdef SHOW_PRIORITY
-
+	#ifdef SHOW_PRIORITY
 	printf(" - This app policy: %d\n", policy);
 	printf(" - App thread priority: %d\n", params2.sched_priority);
 
 	printf(" [0] SCEHD_OTHER: %d\n", SCHED_OTHER);
 	printf(" [1] SCEHD_FIFO: %d\n", SCHED_FIFO);
 	printf(" [2] SCEHD_RR: %d\n", SCHED_RR);
+	#endif
 
-#endif
-
-#endif
+	#endif
 
 }
 
 
-
-
-// monitor_thread_generator
+/* 	Name: Monitor_thread_generator */
+/*
+	1. generate passing data to monitor thread.
+	2. generate monitor thread: pthread_create(monitor_routine)
+*/
 void monitor_thread_generator()
 {
 
-#ifdef APP_COPY1_OVERHEAD
-	gettimeofday(&copy_begTick, NULL);
-#endif
+	/* 	Initial monitor_thread_function_stack_number: 2 */
+	/*
+		Application thread has 2 function_stack: 
+		[1] App stack with function_stack_number		: 0
+		[2] Passing stack with  function_stack_number	: 1
 
-#ifdef APP_IN_COPY1_OVERHEAD
-	gettimeofday(&copy1_1_begTick, NULL);
-#endif
+		Monitor thread has more than one function_stack with function_stack_number from starting 2
 
-	/* copy */
-	//unsigned int* copied_signature_queue = (int*)malloc(sizeof(int) * current_queue_size);
+	*/
+	static unsigned int monitor_thread_function_stack_number = 2;
+
+
+	/* 	No copy, Just Passing */
+	/*
+		There is a specific signature_queue for each monitor.
+	   	Each signature queue for each monitor thread.	
+	*/   
 	unsigned int* copied_signature_queue = signature_queue;
 	unsigned int copied_signature_queue_size = current_queue_size;
-	//unsigned* copied_signature_queue_size = (int*)malloc(sizeof(int));
-	//*copied_signature_queue_size = current_queue_size;
-
-#ifdef APP_IN_COPY1_OVERHEAD
-	gettimeofday(&copy1_1_endTick, NULL);
-	printf(" [Overhead-1.1.1] signature_queue_gen_time: %ld, ", (copy1_1_endTick.tv_sec - copy1_1_begTick.tv_sec) * 1000000 + (copy1_1_endTick.tv_usec - copy1_1_begTick.tv_usec));
-	total_copy1_1_time += ((copy1_1_endTick.tv_sec - copy1_1_begTick.tv_sec) * 1000000 + (copy1_1_endTick.tv_usec - copy1_1_begTick.tv_usec));
-	printf(" [Overhead-1.1.1] Total signature_queue_gen_time: %ld\n", total_copy1_1_time);
-#endif
 
 
-#ifdef APP_IN_COPY1_OVERHEAD
-	gettimeofday(&copy1_2_begTick, NULL);
-#endif
-
-#ifdef APP_IN_IN_COPY1_OVERHEAD
-	gettimeofday(&copy1_2_1_begTick, NULL);
-#endif
-
-
-#ifdef APP_IN_IN_COPY1_OVERHEAD
-	gettimeofday(&copy1_2_1_endTick, NULL);
-	printf(" [Overhead-1.1.2.1] step1_time: %ld, ", (copy1_2_1_endTick.tv_sec - copy1_2_1_begTick.tv_sec) * 1000000 + (copy1_2_1_endTick.tv_usec - copy1_2_1_begTick.tv_usec));
-	total_copy1_2_1_time += ((copy1_2_1_endTick.tv_sec - copy1_2_1_begTick.tv_sec) * 1000000 + (copy1_2_1_endTick.tv_usec - copy1_2_1_begTick.tv_usec));
-	printf(" [Overhead-1.1.2.1] Total step1_time: %ld\n", total_copy1_2_1_time);
-#endif
-
-
-#ifdef APP_IN_IN_COPY1_OVERHEAD
-	gettimeofday(&copy1_2_2_begTick, NULL);
-#endif
+	/* 	Generate passing data from Application to monitor thread */
 	monitor_dat* mon_dat = (monitor_dat*)malloc(sizeof(monitor_dat));
-
-#ifdef APP_IN_IN_COPY1_OVERHEAD
-	gettimeofday(&copy1_2_2_endTick, NULL);
-	printf(" [Overhead-1.1.2.2] step2_time: %ld, ", (copy1_2_2_endTick.tv_sec - copy1_2_2_begTick.tv_sec) * 1000000 + (copy1_2_2_endTick.tv_usec - copy1_2_2_begTick.tv_usec));
-	total_copy1_2_2_time += ((copy1_2_2_endTick.tv_sec - copy1_2_2_begTick.tv_sec) * 1000000 + (copy1_2_2_endTick.tv_usec - copy1_2_2_begTick.tv_usec));
-	printf(" [Overhead-1.1.2.2] Total step2_time: %ld\n", total_copy1_2_2_time);
-#endif
-	
-	
-#ifdef APP_IN_IN_COPY1_OVERHEAD
-	gettimeofday(&copy1_2_3_begTick, NULL);
-#endif
-
 	mon_dat->copied_signature_queue = copied_signature_queue;
 	mon_dat->copied_signature_queue_size = copied_signature_queue_size;
 
-#ifdef APP_IN_IN_COPY1_OVERHEAD
-	gettimeofday(&copy1_2_3_endTick, NULL);
-	printf(" [Overhead-1.1.2.3] step3_time: %ld, ", (copy1_2_3_endTick.tv_sec - copy1_2_3_begTick.tv_sec) * 1000000 + (copy1_2_3_endTick.tv_usec - copy1_2_3_begTick.tv_usec));
-	total_copy1_2_3_time += ((copy1_2_3_endTick.tv_sec - copy1_2_3_begTick.tv_sec) * 1000000 + (copy1_2_3_endTick.tv_usec - copy1_2_3_begTick.tv_usec));
-	printf(" [Overhead-1.1.2.3] Total step3_time: %ld\n", total_copy1_2_3_time);
-#endif
-
-#ifdef APP_IN_COPY1_OVERHEAD
-	gettimeofday(&copy1_2_endTick, NULL);
-	printf(" [Overhead-1.1.2] signature_queue_copy_time: %ld, ", (copy1_2_endTick.tv_sec - copy1_2_begTick.tv_sec) * 1000000 + (copy1_2_endTick.tv_usec - copy1_2_begTick.tv_usec));
-	total_copy1_2_time += ((copy1_2_endTick.tv_sec - copy1_2_begTick.tv_sec) * 1000000 + (copy1_2_endTick.tv_usec - copy1_2_begTick.tv_usec));
-	printf(" [Overhead-1.1.2] Total signature_queue_copy_time: %ld\n", total_copy1_2_time);
-#endif
+	static_copy_stack(1, monitor_thread_function_stack_number);
+	mon_dat->function_stack_number = monitor_thread_function_stack_number++; 
 
 
-#ifdef APP_IN_COPY1_OVERHEAD
-	gettimeofday(&copy1_3_begTick, NULL);
-#endif
-
-	// copy prior_returnPointStack
-	mon_dat->p_mon_returnPointStack = copy_stack(p_app_prior_returnPointStack);
-
-#ifdef APP_IN_COPY1_OVERHEAD
-	gettimeofday(&copy1_3_endTick, NULL);
-	printf(" [Overhead-1.1.3] callStack_copy_time: %ld, ", (copy1_3_endTick.tv_sec - copy1_3_begTick.tv_sec) * 1000000 + (copy1_3_endTick.tv_usec - copy1_3_begTick.tv_usec));
-	total_copy1_3_time += ((copy1_3_endTick.tv_sec - copy1_3_begTick.tv_sec) * 1000000 + (copy1_3_endTick.tv_usec - copy1_3_begTick.tv_usec));
-	printf(" [Overhead-1.1.3] Total callStack_copy_time: %ld\n", total_copy1_3_time);
-#endif
-
-#ifdef APP_COPY1_OVERHEAD
-	gettimeofday(&copy_endTick, NULL);
-	printf(" [Overhead-1.1] sigQueue_and_callStack_copy_time: %ld, ", (copy_endTick.tv_sec - copy_begTick.tv_sec) * 1000000 + (copy_endTick.tv_usec - copy_begTick.tv_usec));
-	total_copy_time += ((copy_endTick.tv_sec - copy_begTick.tv_sec) * 1000000 + (copy_endTick.tv_usec - copy_begTick.tv_usec));
-	printf(" [Overhead-1.1] Total sigQueue_and_callStack_copy_time: %ld\n", total_copy_time);
-#endif
-
-
-	/* mon-thread gen */
-
-#ifdef MON_THREAD_OVERHEAD
-	gettimeofday(&thread_creation_begTick, NULL);
-#endif
+	/* 	Monitor thread Generation */
 	pthread_create(&mon_thread, NULL, monitor_routine, (void*)mon_dat);
+
 
 }
 
+/*
+	[ enqeue_signature Set ]
+	1. enqueue_signature: Branch type
+	2. enqueue_signature_with_call : Call type
+	3. enqueue_signature_with_return : Return type
+	4. enqueue_signature_with_remainder : Program Exit type
+*/
 
-/* target */
 void enqueue_signature(int i)
 {
-#ifdef ACES_APP_DEBUG
+	#ifdef ACES_APP_DEBUG
 	printf(" [target][%dth] enqueue: 0x%x\n",current_queue_size ,i);
-#endif
+	#endif
+
+	#ifdef CFE_INJECTION_ON
+	CFE_INJECTION(CFE_INJECTION_NUMBER++, 2); // branch
+	#endif
 
 	signature_queue[current_queue_size] = i;
 	current_queue_size++;
 
+	/* 	If signature_queue is full */
+	/*
+		1. Provoke monitor thread
+		2. Select the next signature queue
+		3. Stack-Copy from App stack to Passing stack
 
+	*/
 	if(current_queue_size == SIGNATURE_QUEUE_SIZE)
 	{
-#ifdef ONLY_ENQUEUE
-	printf(" moniotor task number: %d \n", mon_task_number++);
-#endif
-
-#ifdef MONITOR_OVERHEAD2
-	gettimeofday(&queue_full_begTick, NULL);
-#endif
-		
-#ifndef ONLY_ENQUEUE
+		/* 1. Provoke monitor thread */
 		monitor_thread_generator();	
-#endif
-		current_queue_size = 0;
-	
+
+		/* 2. Select the next signature queue & Initialization */
+		current_queue_size = 0;	
 		monitor_process_num++;
 		signature_queue = signature_queue_set[monitor_process_num];
 
-		//signature_queue = (unsigned int*)malloc(sizeof(unsigned int) * SIGNATURE_QUEUE_SIZE);
-
-#ifndef ONLY_ENQUEUE
-
-#ifdef APP_COPY2_OVERHEAD		
-	gettimeofday(&app_copy2_begTick, NULL);
-#endif
-		delete_stack(p_app_prior_returnPointStack);
-		p_app_prior_returnPointStack = copy_stack(p_app_current_returnPointStack);
-
-#ifdef APP_COPY2_OVERHEAD
-	gettimeofday(&app_copy2_endTick, NULL);
-	printf(" [Overhead-1.2] stack_copy_time: %ld, ", (app_copy2_endTick.tv_sec - app_copy2_begTick.tv_sec) * 1000000 + (app_copy2_endTick.tv_usec - app_copy2_begTick.tv_usec));
-	total_app_copy2_time += ((app_copy2_endTick.tv_sec - app_copy2_begTick.tv_sec) * 1000000 + (app_copy2_endTick.tv_usec - app_copy2_begTick.tv_usec));
-	printf(" [Overhead-1.2] Total stack_copy_time: %ld\n", total_app_copy2_time);
-#endif
-
-#ifdef MONITOR_OVERHEAD2
-	gettimeofday(&queue_full_endTick, NULL);
-	printf(" [Overhead-B] Full_queue_sequence_time: %ld, ", (queue_full_endTick.tv_sec - queue_full_begTick.tv_sec) * 1000000 + (queue_full_endTick.tv_usec - queue_full_begTick.tv_usec));
-	total_queue_full_time += ((queue_full_endTick.tv_sec - queue_full_begTick.tv_sec) * 1000000 + (queue_full_endTick.tv_usec - queue_full_begTick.tv_usec));
-	printf(" [Overhead-B] Total Full_queue_sequence_Time: %ld\n", total_queue_full_time);
-#endif
-
-#endif
-
+		/* 3. Stack-Copy from App stack to Passing stack */
+		static_copy_stack(0, 1);
 	}
 
 }
 
 void enqueue_signature_with_call(int i)
 {
-#ifdef ACES_APP_DEBUG
+	#ifdef ACES_APP_DEBUG
 	printf(" [target][%dth] enqueue with call: 0x%x\n",current_queue_size ,i);
-#endif
+	#endif
+
+	#ifdef CFE_INJECTION_ON
+	CFE_INJECTION(CFE_INJECTION_NUMBER++, 1); // call
+	#endif
 
 	signature_queue[current_queue_size] = i;
 	current_queue_size++;
 
-	//static int call_num=0; 
-	//printf(" call: %d, size: %d\n", ++call_num, p_app_current_returnPointStack->size);
 
-#ifdef APP_STACK_PUSH_OVERHEAD
-	gettimeofday(&app_stack_push_begTick, NULL);
-#endif
-	/* push signature into p_app_returnPointStack */
-	//push(p_app_current_returnPointStack, i);	
-#ifdef APP_STACK_PUSH_OVERHEAD
-	gettimeofday(&app_stack_push_endTick, NULL);
-	//printf(" [mon] Enqueue Time: %ld, ", (enqueue_endTick.tv_sec - enqueue_begTick.tv_sec) * 1000000 + (enqueue_endTick.tv_usec - enqueue_begTick.tv_usec));
-	total_app_stack_push_time += ((app_stack_push_endTick.tv_sec - app_stack_push_begTick.tv_sec) * 1000000 + (app_stack_push_endTick.tv_usec - app_stack_push_begTick.tv_usec));
-	printf(" [mon] Total app_stack_push Time: %ld\n", total_app_stack_push_time);
-#endif
+	/* App Stack PUSH in Call-type BasicBlock */
+	static_push(0, i);
 
 
+	/* 	If signature_queue is full */
+	/*
+		1. Provoke monitor thread
+		2. Select the next signature queue
+		3. Stack-Copy from App stack to Passing stack
+	*/
 	if(current_queue_size == SIGNATURE_QUEUE_SIZE)
 	{
-
-#ifdef ONLY_ENQUEUE
-	printf(" moniotor task number: %d \n", mon_task_number++);
-#endif
-
-#ifdef MONITOR_OVERHEAD2
-	gettimeofday(&queue_full_begTick, NULL);
-#endif
-
-#ifndef ONLY_ENQUEUE
+		/* 1. Provoke monitor thread */
 		monitor_thread_generator();	
-#endif
-		current_queue_size = 0;
 		
+		/* 2. Select the next signature queue */
+		current_queue_size = 0;
 		monitor_process_num++;
 		signature_queue = signature_queue_set[monitor_process_num];
-		
-		//signature_queue = (unsigned int*)malloc(sizeof(unsigned int) * SIGNATURE_QUEUE_SIZE);
 
-#ifndef ONLY_ENQUEUE
-
-#ifdef APP_COPY2_OVERHEAD		
-	gettimeofday(&app_copy2_begTick, NULL);
-#endif
-
-		delete_stack(p_app_prior_returnPointStack);
-		p_app_prior_returnPointStack = copy_stack(p_app_current_returnPointStack);
-
-#ifdef APP_COPY2_OVERHEAD
-	gettimeofday(&app_copy2_endTick, NULL);
-	printf(" [Overhead-1.2] stack_copy_time: %ld, ", (app_copy2_endTick.tv_sec - app_copy2_begTick.tv_sec) * 1000000 + (app_copy2_endTick.tv_usec - app_copy2_begTick.tv_usec));
-	total_app_copy2_time += ((app_copy2_endTick.tv_sec - app_copy2_begTick.tv_sec) * 1000000 + (app_copy2_endTick.tv_usec - app_copy2_begTick.tv_usec));
-	printf(" [Overhead-1.2] Total stack_copy_time: %ld\n", total_app_copy2_time);
-#endif
-
-
-#ifdef MONITOR_OVERHEAD2
-	gettimeofday(&queue_full_endTick, NULL);
-	printf(" [Overhead-B] Full_queue_sequence_time: %ld, ", (queue_full_endTick.tv_sec - queue_full_begTick.tv_sec) * 1000000 + (queue_full_endTick.tv_usec - queue_full_begTick.tv_usec));
-	total_queue_full_time += ((queue_full_endTick.tv_sec - queue_full_begTick.tv_sec) * 1000000 + (queue_full_endTick.tv_usec - queue_full_begTick.tv_usec));
-	printf(" [Overhead-B] Total Full_queue_sequence_time: %ld\n", total_queue_full_time);
-#endif
-
-#endif
+		/* 3. Stack-Copy from App stack to Passing stack */
+		static_copy_stack(0, 1);
 	}
 
 }
@@ -777,223 +509,163 @@ void enqueue_signature_with_return(int i)
 {
 
 
-#ifdef ACES_APP_DEBUG
+	#ifdef ACES_APP_DEBUG
 	printf(" [target][%dth] enqueue with return: 0x%x\n",current_queue_size ,i);
-#endif
+	#endif
 
+	#ifdef CFE_INJECTION_ON
+	CFE_INJECTION(CFE_INJECTION_NUMBER++, 0); // return
+	#endif
 
 	signature_queue[current_queue_size] = i;
 	current_queue_size++;
 	
-	//static int return_num=0; 
-	//printf(" return: %d\n", ++return_num);
 	
-#ifdef APP_STACK_POP_OVERHEAD
-	gettimeofday(&app_stack_pop_begTick, NULL);
-#endif
-	/* pop signature from p_app_returnPointStack */
-	//pop(p_app_current_returnPointStack);
 
-#ifdef APP_STACK_POP_OVERHEAD
-	gettimeofday(&app_stack_pop_endTick, NULL);
-	//printf(" [mon] Enqueue Time: %ld, ", (enqueue_endTick.tv_sec - enqueue_begTick.tv_sec) * 1000000 + (enqueue_endTick.tv_usec - enqueue_begTick.tv_usec));
-	total_app_stack_pop_time += ((app_stack_pop_endTick.tv_sec - app_stack_pop_begTick.tv_sec) * 1000000 + (app_stack_pop_endTick.tv_usec - app_stack_pop_begTick.tv_usec));
-	printf(" [mon] Total app_stack_pop Time: %ld\n", total_app_stack_pop_time);
-#endif
+	/* App Stack POP in Call-type BasicBlock */
+	static_pop(0);
 
-
+	/* 	If signature_queue is full */
+	/*
+		1. Provoke monitor thread
+		2. Select the next signature queue
+		3. Stack-Copy from App stack to Passing stack
+	*/
 	if(current_queue_size == SIGNATURE_QUEUE_SIZE)
 	{
-#ifdef ONLY_ENQUEUE
-	printf(" moniotor task number: %d \n", mon_task_number++);
-#endif
-
-#ifdef MONITOR_OVERHEAD2
-	gettimeofday(&queue_full_begTick, NULL);
-#endif
-
-#ifndef ONLY_ENQUEUE
+		/*	1. Provoke monitor thread */
 		monitor_thread_generator();	
-#endif
-		current_queue_size = 0;
 		
+		/*	2. Select the next signature queue */
+		current_queue_size = 0;
 		monitor_process_num++;
 		signature_queue = signature_queue_set[monitor_process_num];
 		
-		//signature_queue = (unsigned int*)malloc(sizeof(unsigned int) * SIGNATURE_QUEUE_SIZE);
-
-#ifndef ONLY_ENQUEUE
-
-#ifdef APP_COPY2_OVERHEAD		
-	gettimeofday(&app_copy2_begTick, NULL);
-#endif
-		delete_stack(p_app_prior_returnPointStack);
-		p_app_prior_returnPointStack = copy_stack(p_app_current_returnPointStack);
-
-#ifdef APP_COPY2_OVERHEAD
-	gettimeofday(&app_copy2_endTick, NULL);
-	printf(" [Overhead-1.2] stack_copy_time: %ld, ", (app_copy2_endTick.tv_sec - app_copy2_begTick.tv_sec) * 1000000 + (app_copy2_endTick.tv_usec - app_copy2_begTick.tv_usec));
-	total_app_copy2_time += ((app_copy2_endTick.tv_sec - app_copy2_begTick.tv_sec) * 1000000 + (app_copy2_endTick.tv_usec - app_copy2_begTick.tv_usec));
-	printf(" [Overhead-1.2] Total stack_copy_time: %ld\n", total_app_copy2_time);
-#endif
-
-#ifdef MONITOR_OVERHEAD2
-	gettimeofday(&queue_full_endTick, NULL);
-	printf(" [Overhead-B] Full_queue_sequence_time: %ld, ", (queue_full_endTick.tv_sec - queue_full_begTick.tv_sec) * 1000000 + (queue_full_endTick.tv_usec - queue_full_begTick.tv_usec));
-	total_queue_full_time += ((queue_full_endTick.tv_sec - queue_full_begTick.tv_sec) * 1000000 + (queue_full_endTick.tv_usec - queue_full_begTick.tv_usec));
-	printf(" [Overhead-B] Full_queue_sequence_time: %ld\n", total_queue_full_time);
-#endif
-
-#endif
+		/*	3. Stack-Copy from App stack to Passing stack */
+		static_copy_stack(0, 1);
 	}
-
-
 }
 
+/*
+	NOTE: enqueue_signature_with_remainder_process runs in PROGRAM-EXIT-type basicblock.
+*/
 void enqueue_signature_with_remainder_process(int i)
 {
 	//current_queue_size =0;
-#ifdef  PROG_EXEC_TIME
-	gettimeofday(&program_endTick, NULL);
-	printf(" [Execution time]: %ld\n", (program_endTick.tv_sec - program_begTick.tv_sec) * 1000000 + (program_endTick.tv_usec - program_begTick.tv_usec));
-#endif
+
+	#ifdef CFE_INJECTION_ON
+	CFE_INJECTION(CFE_INJECTION_NUMBER++, 4); // rmd
+	#endif
 
 	signature_queue[current_queue_size] = i;
 	current_queue_size++;
 	
+	/* 	If signature_queue is not 1 */
+	/*
+	   	"The size of signature queue is Not one" means
+			-> There is no remaining signature queue.
+
+		Otherwise, There is remaining signature queue.
+			-> This should be processed.
+		
+		(o) 1. Provoke monitor thread
+		(x) 2. Select the next signature queue
+		(x) 3. Stack-Copy from App stack to Passing stack
+	*/
 	if(current_queue_size != 1)
 	{
-
-#ifdef ONLY_ENQUEUE
-	printf(" moniotor task number: %d \n", mon_task_number++);
-#endif
-
-#ifdef MONITOR_OVERHEAD2
-	gettimeofday(&queue_full_begTick, NULL);
-#endif
-
-#ifndef ONLY_ENQUEUE
 		monitor_thread_generator();	
-#endif
-		current_queue_size = 0;
-		//signature_queue = (unsigned int*)malloc(sizeof(unsigned int) * SIGNATURE_QUEUE_SIZE);
-
-#ifndef ONLY_ENQUEUE
-
-#ifdef APP_COPY2_OVERHEAD		
-	gettimeofday(&app_copy2_begTick, NULL);
-#endif
-
-		delete_stack(p_app_prior_returnPointStack);
-		//p_app_prior_returnPointStack = copy_stack(p_app_current_returnPointStack);
-
-#ifdef APP_COPY2_OVERHEAD
-	gettimeofday(&app_copy2_endTick, NULL);
-	printf(" [Overhead-1.2] stack_copy_time: %ld, ", (app_copy2_endTick.tv_sec - app_copy2_begTick.tv_sec) * 1000000 + (app_copy2_endTick.tv_usec - app_copy2_begTick.tv_usec));
-	total_app_copy2_time += ((app_copy2_endTick.tv_sec - app_copy2_begTick.tv_sec) * 1000000 + (app_copy2_endTick.tv_usec - app_copy2_begTick.tv_usec));
-	printf(" [Overhead-1.2] Total stack_copy_time: %ld\n", total_app_copy2_time);
-#endif
-
-#ifdef MONITOR_OVERHEAD2
-	gettimeofday(&queue_full_endTick, NULL);
-	printf(" [Overhead-B] Full_queue_sequence_time: %ld, ", (queue_full_endTick.tv_sec - queue_full_begTick.tv_sec) * 1000000 + (queue_full_endTick.tv_usec - queue_full_begTick.tv_usec));
-	total_queue_full_time += ((queue_full_endTick.tv_sec - queue_full_begTick.tv_sec) * 1000000 + (queue_full_endTick.tv_usec - queue_full_begTick.tv_usec));
-	printf(" [Overhead-B] Full_queue_sequence_time: %ld\n", total_queue_full_time);
-#endif
-
-#endif
-
 	}
-
-
-
-	while(1);
+	
+	/* For preventing PROGRAM EXIT */
+	//while(1);
 }
 
-/* monitor: dequeue and verification */
 
 
-/* dequeue */
+
+
+
+/* Name: dequeue_signature */
 unsigned int dequeue_signature(unsigned int* copied_signature_queue, unsigned int deque_pointer)
 {
 	unsigned int return_node_id;
 	return_node_id = copied_signature_queue[deque_pointer];
 	
-#ifdef ACES_MON_DEBUG
+	#ifdef ACES_MON_DEBUG
 	printf(" [monitor] dequeue: 0x%x\n", return_node_id);
-#endif
+	#endif
 	return return_node_id;
 }
 
 
 
-/* signature verification */
+/* 	Name: signature_verification */
 /*
-	1. if_has_connection_move
-	2. search(aces_list)
+	1. Initialize node(=current node) with InitValue (InitValue is determined in ..)
+	2. Get next node from the current node.
+	3. Compare data in the next node with dequeued data from signature queue.
 */   
 void signature_verification(
 		unsigned int node_id, 
 		BBNode** currentBasicBlock,
-		ReturnPointStack* mon_returnPointStack
+		unsigned int function_stack_number
 		) 
 {
 
-#ifdef ACES_MON_DEBUG
+	#ifdef ACES_MON_DEBUG
 	show_elements(mon_returnPointStack);
-#endif
+	#endif
 	BBNode* t_BBNode = (*currentBasicBlock);
 
+	/* Matched */
 	if(if_has_connection_move(
 				p_integrated_CFG, 
 				node_id, 
 				currentBasicBlock,
-				mon_returnPointStack
+				function_stack_number
 				) == true)
 	{
 
-#ifdef ACES_MON_DEBUG
+		#ifdef ACES_MON_DEBUG
 		printf(" [monitor] verification: node(0x%x) to node(0x%x) is OK!\n", t_BBNode->node_id, node_id);
-#endif
+		#endif
 		return;
 	}
-	
+
+	/* Not Matched */	
 	else
 	{
 		printf(" [Monitor] Found Error!\n");
 		exit(-1);
-		//currentBasicBlock = search(p_integrated_CFG, 0x00000001);
 
 		return;
 	}
 }
 
-/* if_has_connection_move */
+/*	Name: if_has_connection_move */
 /*
-   1.search_and_change_currentBB
+   	Search the next node of current node in IPCFG (search_and_change_currentBB)
 */   
-
 bool if_has_connection_move(
 		INTEGRATED_CFG* p_integrated_CFG, 
 		unsigned int node_id, 
 		BBNode** currentBasicBlock,
-		ReturnPointStack* mon_returnPointStack
+		unsigned int function_stack_number
 		)
 {
 
 	/*
-		connectionType
-
+		ConnectionType in IPCFG
 		- 0: RETURN
 		- 1: BRANCH
 		- 2: COND_BRANCH
 		- 3: CALL
 		- 4: MAIN RETURN
-
 	*/
 
 
-	/* INIT */
+	/* 	Configure Initial Node */
 	/*
 		If currentBasicBlock is a first dequeued BB,
 		BasicBlock would be updated any input node_id.
@@ -1007,39 +679,42 @@ bool if_has_connection_move(
 
 	}
 	
-	/* RETURN */
+	/* Type: RETURN */
 	else if((*currentBasicBlock)->connectionType == 0)
 	{
-#ifdef ACES_DEBUG
-		printf("  -BasicBlockType: RETURN(0), input_node_id: 0x%x, current_node_id: 0x%x, connectionArr[0]: 0x%x\n", node_id, (*currentBasicBlock)->node_id, (*currentBasicBlock)->connectionArr[0]);
-#endif
-		//unsigned int returnPoint = 	pop(p_returnPointStack);
+		#ifdef ACES_DEBUG
+		printf("  -BasicBlockType: RETURN(0), input_node_id: 0x%x,\\
+			   	current_node_id: 0x%x, connectionArr[0]: 0x%x\n", 
+				node_id, (*currentBasicBlock)->node_id, 
+				(*currentBasicBlock)->connectionArr[0]);
+		#endif
+		
 
 		/*
 			RETURN Basicblock could have many connectionNode.
 		*/
 
-		//unsigned int returnPoint = pop(p_returnPointStack);
-		
-		unsigned int returnPoint = pop(mon_returnPointStack);
-		
-#ifdef ACES_MON_DEBUG
+
+		/* 	Monitor-Stack POP: get returnPoint */
+		unsigned int returnPoint = static_pop(function_stack_number);
+
+		#ifdef ACES_MON_DEBUG
 		printf(" [stack][monitor] pop: %x\n", returnPoint);
-#endif
+		#endif
 
-		//BBNode* return_currentBasicBlock = search(returnPoint);
 
-#ifdef ACES_LIST
+		/* 	Search the next node in IPCFG from returnPoint */
+		#ifdef ACES_LIST
 		BBNode* return_currentBasicBlock = search(p_integrated_CFG, returnPoint);	
-#endif
+		#endif
 
-#ifdef ACES_AVLTREE
+		#ifdef ACES_AVLTREE
 		BBNode* return_currentBasicBlock = search(p_integrated_CFG->root, returnPoint);	
-#endif
+		#endif
 
-#ifdef ACES_HASH
+		#ifdef ACES_HASH
 		BBNode* return_currentBasicBlock = search(p_integrated_CFG, returnPoint);
-#endif
+		#endif
 		
 		
 		if((return_currentBasicBlock)->connectionArr[1] != node_id)
@@ -1054,54 +729,17 @@ bool if_has_connection_move(
 		}
 
 
-		/*
-		if(returnPoint != node_id)
-		{
-			return false;
-		}
-
-		else
-		{
-			search_and_change_currentBB(
-					node_id, 
-					currentBasicBlock);
-		}
-
-		*/
-		/*
-
-		int connectionNum = (*currentBasicBlock)->connectionNum;
-		int isConnected = 0;
-		for(int i =0; i < connectionNum; i++)
-		{
-			if((*currentBasicBlock)->connectionArr[i] == node_id)
-			{	
-				isConnected = 1;
-			}
-		}
-
-		if(isConnected != 1)
-		{
-			return false;
-		}
-
-
-		else
-		{
-			search_and_change_currentBB(
-					node_id, 
-					currentBasicBlock);
-		}
-
-		*/
 	}
 
-	/* CALL */
+	/* Type: CALL */
 	else if((*currentBasicBlock)->connectionType == 3)
 	{
-#ifdef ACES_DEBUG
-		printf("  -BasicBlockType: CALL(3), input_node_id: 0x%x, current_node_id: 0x%x, connectionArr[0]: 0x%x\n", node_id, (*currentBasicBlock)->node_id, (*currentBasicBlock)->connectionArr[0]);
-#endif
+		#ifdef ACES_DEBUG
+		printf("  -BasicBlockType: CALL(3), input_node_id: 0x%x, \\
+				current_node_id: 0x%x, connectionArr[0]: 0x%x\n", 
+				node_id, (*currentBasicBlock)->node_id, 
+				(*currentBasicBlock)->connectionArr[0]);
+		#endif
 		/*
 			CALL has 2 connections
 			connectionArr[0] is the node to jump (entry block of callee function)
@@ -1116,26 +754,27 @@ bool if_has_connection_move(
 		else
 		{
 			
-			//push(mon_returnPointStack, (*currentBasicBlock)->connectionArr[0]);
-			//printf(" [stack] push: %x\n", (*currentBasicBlock)->connectionArr[0]);
-			
-			push(mon_returnPointStack, (*currentBasicBlock)->node_id);
-#ifdef ACES_MON_DEBUG
+			static_push(function_stack_number, (*currentBasicBlock)->node_id);
+
+			#ifdef ACES_MON_DEBUG
 			printf(" [stack][monitor] push: %x\n", (*currentBasicBlock)->node_id);
-#endif
+			#endif
 			search_and_change_currentBB(
 					node_id, 
 					currentBasicBlock);
 		}
 	}
 
-	/* BRANCH */
+	/* Type: BRANCH */
 	else if((*currentBasicBlock)->connectionType == 1)
 	{
 
-#ifdef ACES_DEBUG
-		printf("  -BasicBlockType: BRANCH(1), input_node_id: 0x%x, current_node_id: 0x%x, connectionArr[0]: 0x%x\n", node_id, (*currentBasicBlock)->node_id, (*currentBasicBlock)->connectionArr[0]);
-#endif
+		#ifdef ACES_DEBUG
+		printf("  -BasicBlockType: BRANCH(1), input_node_id: 0x%x, \\
+				current_node_id: 0x%x, connectionArr[0]: 0x%x\n", 
+				node_id, (*currentBasicBlock)->node_id, 
+				(*currentBasicBlock)->connectionArr[0]);
+		#endif
 		if((*currentBasicBlock)->connectionArr[0] != node_id)
 		{
 			return false;
@@ -1148,13 +787,19 @@ bool if_has_connection_move(
 		}
 	}
 	
-	/* COND_BRANCH */
+	/* Type: COND_BRANCH */
 	else if((*currentBasicBlock)->connectionType == 2)
 	{
-#ifdef ACES_DEBUG
-		printf("  -BasicBlockType: COND_BRANCH(2), input_node_id: 0x%x, current_node_id: 0x%x, connectionArr[0]: 0x%x\n", node_id, (*currentBasicBlock)->node_id, (*currentBasicBlock)->connectionArr[0]);
-		printf("  -BasicBlockType: COND_BRANCH(2), input_node_id: 0x%x, current_node_id: 0x%x, connectionArr[1]: 0x%x\n", node_id, (*currentBasicBlock)->node_id, (*currentBasicBlock)->connectionArr[1]);
-#endif
+		#ifdef ACES_DEBUG
+		printf("  -BasicBlockType: COND_BRANCH(2), input_node_id: 0x%x, \\
+				current_node_id: 0x%x, connectionArr[0]: 0x%x\n", 
+				node_id, (*currentBasicBlock)->node_id, 
+				(*currentBasicBlock)->connectionArr[0]);
+		printf("  -BasicBlockType: COND_BRANCH(2), input_node_id: 0x%x, \\
+				current_node_id: 0x%x, connectionArr[1]: 0x%x\n", 
+				node_id, (*currentBasicBlock)->node_id, 
+				(*currentBasicBlock)->connectionArr[1]);
+		#endif
 		if((*currentBasicBlock)->connectionArr[0] != node_id)
 		{
 			if((*currentBasicBlock)->connectionArr[1] != node_id)
@@ -1178,8 +823,7 @@ bool if_has_connection_move(
 		}
 	}
 
-	/* EXIT */
-
+	/* Type: EXIT */
 	else if((*currentBasicBlock)->connectionType == 4)
 	{
 		
@@ -1198,7 +842,9 @@ bool if_has_connection_move(
 	else
 	{
 		printf("  [ERROR] undefined connectionType: \n");
-		printf("  [node_id]: %x, [node_type]: %d", (*currentBasicBlock)->node_id, (*currentBasicBlock)->connectionType);
+		printf("  [node_id]: %x, [node_type]: %d", 
+				(*currentBasicBlock)->node_id, 
+				(*currentBasicBlock)->connectionType);
 		
 		return false;
 	}
@@ -1206,48 +852,35 @@ bool if_has_connection_move(
 
 }
 
-/* seach_and_change_currentBB */
+/* 	Name: seach_and_change_currentBB */
+/*
+   	Search the next node of current node in IPCFG (search_and_change_currentBB)
+*/   
 bool search_and_change_currentBB(
 		unsigned int node_id, 
 		BBNode** currentBasicBlock)
 {
 
-#ifdef ACES_LIST
+	#ifdef ACES_LIST
 	BBNode* next_bb = search(p_integrated_CFG, node_id);	
-#endif
+	#endif
 
-#ifdef ACES_AVLTREE
+	#ifdef ACES_AVLTREE
 	BBNode* next_bb = search(p_integrated_CFG->root, node_id);	
-#endif
+	#endif
 
-#ifdef ACES_HASH
+	#ifdef ACES_HASH
 	BBNode* next_bb = search(p_integrated_CFG, node_id);
-#endif
+	#endif
 
 	*currentBasicBlock = next_bb;
-
-
-	/* MAIN RETURN */
-
-/*	if((*currentBasicBlock)->connectionType == 4)
-	{
-		BBNode* t_bb = (*currentBasicBlock);
-		(*currentBasicBlock) = search(p_integrated_CFG, 0x00000001);
-*/	
-		/*	
-		delete_stack(p_returnPointStack);
-		InitStack(p_returnPointStack);
-		*/
-//	}
 
 	return true;
 }
 
 
-/////////////////////////////////////////////////////////////////////////////////////////////////////
 
-
-
+/* 	Name: add_basicblock */
 void add_basicblock(
 	INTEGRATED_CFG* p_integrated_CFG,
 	unsigned int node_id,
@@ -1257,17 +890,17 @@ void add_basicblock(
 {
 
 
-#ifdef ACES_LIST
+	#ifdef ACES_LIST
 	BBNode* p_bb = search(p_integrated_CFG, node_id);
-#endif
+	#endif
 
-#ifdef ACES_AVLTREE
+	#ifdef ACES_AVLTREE
 	BBNode* p_bb = search(p_integrated_CFG->root, node_id);
-#endif
+	#endif
 
-#ifdef ACES_HASH
+	#ifdef ACES_HASH
 	BBNode* p_bb = search(p_integrated_CFG, node_id);
-#endif	
+	#endif	
 
 	/* if first input, */
 	if(p_bb == NULL)
@@ -1281,19 +914,17 @@ void add_basicblock(
 		p_bb->connectionArr[p_bb->currentNum] = connection_node_id;
 		p_bb->currentNum++;
 	
-#ifdef ACES_LIST
-//		printf("list\n");
+		#ifdef ACES_LIST
 		insert(p_integrated_CFG, p_bb);
-#endif
+		#endif
 
-#ifdef ACES_AVLTREE
-//		printf("avltree\n");
+		#ifdef ACES_AVLTREE
 		p_integrated_CFG->root = insert(p_integrated_CFG->root, p_bb);
-#endif
+		#endif
 
-#ifdef ACES_HASH
+		#ifdef ACES_HASH
 		insert(p_integrated_CFG, p_bb);
-#endif
+		#endif
 	
 
 	}

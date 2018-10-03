@@ -12,13 +12,11 @@ typedef struct Node
  
 typedef struct Stack 
 {
-	char name[10];
-	unsigned int max_size;
 	unsigned int size;
 	Node *top;    
 }Stack;
  
-void InitStack(Stack *stack, const char* _name);
+void InitStack(Stack *stack);
 int IsEmpty(Stack *stack); 
 void push(Stack *stack, int data); 
 int pop(Stack *stack); 

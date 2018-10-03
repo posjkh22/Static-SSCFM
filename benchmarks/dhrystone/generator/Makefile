@@ -2,14 +2,15 @@
 BENCH_MARK = ../outputs
 INPUT_MAIN = translated
 LIST 	= ./list
-STACK 	= ./tiny_stack
+STACK 	= ./stack
+SSTACK 	= ./sstack
 TREE 	= ./tree
 HASH 	= ./hash
 FINAL_OUTPUT_BINARY = final_output_binary
 
 #IPCFG_TYPE=hash
-#IPCFG_TYPE=list
-IPCFG_TYPE=avltree
+IPCFG_TYPE=list
+#IPCFG_TYPE=avltree
 
 
 default: link
@@ -32,25 +33,30 @@ coarse_objects: monitor aces_stack aces_list aces_avltree aces_hash coarse_initi
 
 ifeq ($(IPCFG_TYPE), hash)
 link: fine_objects input
-	gcc -o $(FINAL_OUTPUT_BINARY) $(INPUT_MAIN).o fine_initialize_monitor.o monitor.o $(STACK)/aces_stack.o $(HASH)/aces_hash.o -lm -lpthread
+	gcc -o $(FINAL_OUTPUT_BINARY) $(INPUT_MAIN).o fine_initialize_monitor.o monitor.o $(SSTACK)/aces_sstack.o  $(STACK)/aces_stack.o $(HASH)/aces_hash.o -lm -lpthread
 	@echo [IPCFG: Hash]
 endif
 
 ifeq ($(IPCFG_TYPE), avltree)
 link: fine_objects input
-	gcc -o $(FINAL_OUTPUT_BINARY) $(INPUT_MAIN).o fine_initialize_monitor.o monitor.o $(STACK)/aces_stack.o $(TREE)/aces_avltree.o -lm -lpthread
+	gcc -o $(FINAL_OUTPUT_BINARY) $(INPUT_MAIN).o fine_initialize_monitor.o monitor.o $(SSTACK)/aces_sstack.o $(STACK)/aces_stack.o $(TREE)/aces_avltree.o -lm -lpthread
 	@echo [IPCFG: avltree]
 endif
 
 ifeq ($(IPCFG_TYPE), list)
-link: fine_objects input
-	gcc -o $(FINAL_OUTPUT_BINARY) $(INPUT_MAIN).o fine_initialize_monitor.o monitor.o $(STACK)/aces_stack.o $(LIST)/aces_list.o -lm -lpthread
+link: fine_objects input CFE_INJECTION
+	gcc -o $(FINAL_OUTPUT_BINARY) $(INPUT_MAIN).o fine_initialize_monitor.o monitor.o CFE_INJECTION.o $(SSTACK)/aces_sstack.o $(STACK)/aces_stack.o $(LIST)/aces_list.o -lm -lpthread
 	@echo [IPCFG: List]
 endif
+
 
 	
 
 # Benchmark input file #
+
+CFE_INJECTION: CFE_INJECTION.c
+	gcc -c CFE_INJECTION.c
+
 
 input:
 	llc $(BENCH_MARK)/$(INPUT_MAIN).ll -o $(INPUT_MAIN).s
@@ -72,7 +78,10 @@ coarse_initiailize_monitor:
 
 aces_stack:
 	make -C $(STACK)
-	
+
+aces_sstack:
+	make -c $(SSTACK)
+
 aces_list:
 	make -C $(LIST)
 

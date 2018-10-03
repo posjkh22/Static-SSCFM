@@ -12,7 +12,6 @@ typedef struct Node
  
 typedef struct Stack 
 {
-	unsigned int max_size;
 	unsigned int size;
 	Node *top;    
 }Stack;

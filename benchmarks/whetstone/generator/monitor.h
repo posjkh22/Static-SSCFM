@@ -23,13 +23,26 @@ typedef Hash			INTEGRATED_CFG;
 #endif
 
 
-typedef Stack			ReturnPointStack;
+// dynamic way
+//typedef Stack			ReturnPointStack;
 
+// static way
+typedef ACES_SSTACK		REturnPointStack;
+
+// dynamic way
+/*
 void signature_verification(unsigned int node_id, BBNode** currentBasicBlock, ReturnPointStack*);
 void initialize_monitor_routine(unsigned int node_id);
 bool if_has_connection_move(INTEGRATED_CFG* p_integrated_CFG, unsigned int node_id, BBNode** currentBasicBlock, ReturnPointStack*);
 bool search_and_change_currentBB(unsigned int node_id, BBNode** currentBasicBlock);
 unsigned int dequeue_signature(unsigned int* copied_signature_queue, unsigned int deque_pointer);
+*/
 
+// static way
+void signature_verification(unsigned int node_id, BBNode** currentBasicBlock, unsigned int);
+void initialize_monitor_routine(unsigned int node_id);
+bool if_has_connection_move(INTEGRATED_CFG* p_integrated_CFG, unsigned int node_id, BBNode** currentBasicBlock, unsigned int);
+bool search_and_change_currentBB(unsigned int node_id, BBNode** currentBasicBlock);
+unsigned int dequeue_signature(unsigned int* copied_signature_queue, unsigned int deque_pointer);
 
 #endif

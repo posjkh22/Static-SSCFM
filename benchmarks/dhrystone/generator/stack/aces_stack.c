@@ -2,12 +2,10 @@
 #include "aces_stack.h"
 #include <stdio.h>
 
-void InitStack(Stack *stack, const char* _name)
+void InitStack(Stack *stack)
 {
-	strcpy(stack->name, _name);
-	stack->max_size = 0;
 	stack->size = 0;	
-	stack->top = NULL;	
+	stack->top = NULL; 
 }
  
 int IsEmpty(Stack *stack)
@@ -16,23 +14,13 @@ int IsEmpty(Stack *stack)
 }
 void push(Stack *stack, int data)
 {
-	static unsigned int push_number = 0;
 	Node *now = (Node *)malloc(sizeof(Node)); 
 	now->data = data;
 	now->next = stack->top;
 	stack->top = now;   
 	stack->size++;
 	
-	
-	push_number++;
-
-	if(stack->size > stack->max_size)
-	{
-		stack->max_size = stack->size;
-		printf(" [stack %s] max_size:  %u, push_number: %u\n", stack->name, stack->max_size, push_number);
-	}
-	
-
+//	printf(" [stack] push: %x\n", data);
 }
 
 int pop(Stack *stack)
@@ -60,12 +48,10 @@ int pop(Stack *stack)
 Stack* copy_stack(Stack* stack)
 {
 	Stack* copied_stack = (Stack*)malloc(sizeof(Stack));
-	InitStack(copied_stack, stack->name);
+	InitStack(copied_stack);
 
 	unsigned int *temp_arr = (unsigned int*)malloc(sizeof(unsigned int) * stack->size);
 	Node* top =  stack->top;
-
-	copied_stack->max_size = stack->max_size;
 
 	//printf("size: %d\n", stack->size);
 

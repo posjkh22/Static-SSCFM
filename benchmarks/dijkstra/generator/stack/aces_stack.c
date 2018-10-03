@@ -4,9 +4,8 @@
 
 void InitStack(Stack *stack)
 {
-	stack->max_size = 0;
 	stack->size = 0;	
-	stack->top = NULL;	
+	stack->top = NULL; 
 }
  
 int IsEmpty(Stack *stack)
@@ -15,20 +14,13 @@ int IsEmpty(Stack *stack)
 }
 void push(Stack *stack, int data)
 {
-	static unsigned int push_number = 0;
 	Node *now = (Node *)malloc(sizeof(Node)); 
 	now->data = data;
 	now->next = stack->top;
 	stack->top = now;   
 	stack->size++;
-	push_number++;
-
-	if(stack->size > stack->max_size)
-	{
-		stack->max_size = stack->size;
-		printf(" [stack] max_size:  %u, push_number: %u\n", stack->max_size, push_number);
-	}
-
+	
+//	printf(" [stack] push: %x\n", data);
 }
 
 int pop(Stack *stack)

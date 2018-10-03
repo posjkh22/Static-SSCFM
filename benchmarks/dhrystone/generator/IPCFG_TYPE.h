@@ -1,4 +1,4 @@
 
-#define ACES_AVLTREE
+//#define ACES_AVLTREE
 //#define ACES_HASH
-//#define ACES_LIST
+#define ACES_LIST
