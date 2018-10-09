@@ -1,0 +1,5 @@
+
+#define SIGNATURE_QUEUE_SIZE 350000 	// one
+//#define SIGNATURE_QUEUE_SIZE 180000 	// two
+//#define SIGNATURE_QUEUE_SIZE 120000 	// three 
+//#define SIGNATURE_QUEUE_SIZE 90000 	// four 

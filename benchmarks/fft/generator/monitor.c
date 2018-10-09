@@ -49,6 +49,10 @@ struct BBNode;
 #include <sys/time.h>
 
 
+/* benchmark meta data */
+#include "benchmark_meta_data.h"
+
+
 /* CFE injection */
 #include "CFE_INJECTION.h"
 #define CFE_INJECTION_ON
@@ -81,13 +85,15 @@ struct BBNode;
 
 /* 2. signature queue size table */
 
+// #include "benchmark_meta_data.h" 
 
+/*
 //#define SIGNATURE_QUEUE_SIZE 9000000 	// one
 //#define SIGNATURE_QUEUE_SIZE 5000000 	// one
 //#define SIGNATURE_QUEUE_SIZE 2500000 	// two
 //#define SIGNATURE_QUEUE_SIZE 1700000 	// three 
 #define SIGNATURE_QUEUE_SIZE 1300000 	// four 
-
+*/
 
 /* 3. The maximum number of signature queue	*/
 

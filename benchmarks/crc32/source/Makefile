@@ -6,7 +6,7 @@ execute: is_signature_queue_full.o crc_32.o
 	gcc -o crc32 is_signature_queue_full.o crc_32.o
 
 is_signature_queue_full.o:
-	gcc -c is_signature_queue_full.cK
+	gcc -c is_signature_queue_full.c
 
 crc_32.o: crc_32.c
 	gcc -c crc_32.c

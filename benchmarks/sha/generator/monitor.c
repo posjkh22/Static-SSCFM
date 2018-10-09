@@ -49,9 +49,13 @@ struct BBNode;
 #include <sys/time.h>
 
 
+/* benchmark meta data */
+#include "benchmark_meta_data.h"
+
+
 /* CFE injection */
 #include "CFE_INJECTION.h"
-//#define CFE_INJECTION_ON
+#define CFE_INJECTION_ON
 
 
 #define true 1
@@ -76,16 +80,20 @@ struct BBNode;
 //#define ACES_APP_DEBUG
 //#define ACES_MON_DEBUG
 //#define ACES_MINIMAL_DEBUG
-//#define MONITOR_PROCESS_DEBUG
+#define MONITOR_PROCESS_DEBUG
 
 
 /* 2. signature queue size table */
 
-//#define SIGNATURE_QUEUE_SIZE 2600000 	// one
-#define SIGNATURE_QUEUE_SIZE 1300000 	// two
-//#define SIGNATURE_QUEUE_SIZE 900000 	// three 
-//#define SIGNATURE_QUEUE_SIZE 700000 	// four 
+// #include "benchmark_meta_data.h" 
 
+/*
+//#define SIGNATURE_QUEUE_SIZE 9000000 	// one
+//#define SIGNATURE_QUEUE_SIZE 5000000 	// one
+//#define SIGNATURE_QUEUE_SIZE 2500000 	// two
+//#define SIGNATURE_QUEUE_SIZE 1700000 	// three 
+#define SIGNATURE_QUEUE_SIZE 1300000 	// four 
+*/
 
 /* 3. The maximum number of signature queue	*/
 
@@ -137,6 +145,15 @@ typedef struct
 INTEGRATED_CFG* p_integrated_CFG = NULL;
 
 
+/* 4. MON_DAT */
+monitor_dat monitor_dat_set[NUMBER_OF_SIGNATURE_QUEUE];
+
+
+/* 5. Current BBNode */
+BBNode BBNode_set[NUMBER_OF_SIGNATURE_QUEUE];
+
+
+
 
 /* Not Used */
 unsigned int leverage_signature = 10;
@@ -182,8 +199,11 @@ void monitor_process(
 	
 
 	/* Current & Initial(temporary) BasicBlock Node */
-	BBNode *currentBasicBlock = (BBNode*)malloc(sizeof(BBNode));
+	//BBNode *currentBasicBlock = (BBNode*)malloc(sizeof(BBNode));
+	BBNode *currentBasicBlock = &BBNode_set[function_stack_number-2];
 	
+
+
 	/* Temporary variable for release memory */
 	BBNode *to_free_currentBasicBlock = currentBasicBlock;
 
@@ -224,7 +244,7 @@ void monitor_process(
 	printf(" [monitor] Monitor process has finished!\n");
 	#endif
 
-	free(to_free_currentBasicBlock);
+	//free(to_free_currentBasicBlock);
 
 }
 
@@ -304,9 +324,10 @@ void* monitor_routine(void*arg)
 
 
 	/* Memory release for passing data from App thread */	
-	free(mon_dat);
+	//free(mon_dat);
 	
 }
+
 
 
 
@@ -320,11 +341,18 @@ void* monitor_routine(void*arg)
 */
 void init_monitor()
 {
+	printf(" [monitor] monitor_init!\n");
 	
 	#ifdef ACES_MINIMAL_DEBUG
 	printf(" [monitor] monitor_init!\n");
 	#endif	
-	
+
+	if(CFE_OCCUR_FLAG == 1)
+	{
+		printf(" CFE_OCCURS_FLAG ON: pass init_monitor()\n");
+		return;
+	}
+
 	/* 1. Generate & Initialize IPCFG */
 	initialize_monitor_routine(1);
 
@@ -372,6 +400,8 @@ void init_monitor()
 	#endif
 
 	#endif
+	
+	printf(" [monitor] monitor_init finished!\n");
 
 }
 
@@ -406,7 +436,9 @@ void monitor_thread_generator()
 
 
 	/* 	Generate passing data from Application to monitor thread */
-	monitor_dat* mon_dat = (monitor_dat*)malloc(sizeof(monitor_dat));
+	//monitor_dat* mon_dat = (monitor_dat*)malloc(sizeof(monitor_dat));
+	
+	monitor_dat* mon_dat = &monitor_dat_set[monitor_thread_function_stack_number-2];
 	mon_dat->copied_signature_queue = copied_signature_queue;
 	mon_dat->copied_signature_queue_size = copied_signature_queue_size;
 
@@ -554,7 +586,7 @@ void enqueue_signature_with_remainder_process(int i)
 	//current_queue_size =0;
 
 	#ifdef CFE_INJECTION_ON
-	CFE_INJECTION(CFE_INJECTION_NUMBER++, 4); // rmd
+	CFE_INJECTION(CFE_INJECTION_NUMBER++, 3); // rmd
 	#endif
 
 	signature_queue[current_queue_size] = i;
@@ -637,6 +669,17 @@ void signature_verification(
 	else
 	{
 		printf(" [Monitor] Found Error!\n");
+
+		FILE* detected = fopen("./detected.rst", "a");
+
+		if(detected == NULL)
+		{
+			printf(" fopen error!\n");
+		}
+
+		fprintf(detected, "Found Error!\n");
+		//fputs("Found Error!\n", detected);
+		fclose(detected);
 		exit(-1);
 
 		return;

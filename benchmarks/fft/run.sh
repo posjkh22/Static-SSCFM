@@ -151,7 +151,6 @@ echo
 echo " Step $i."
 $FINAL_OUTPUT/final_output_binary
 i=$(($i+1))
-
 	
 done
 
