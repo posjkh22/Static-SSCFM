@@ -48,18 +48,28 @@ void CFE_INJECTION(int i, int type)
 		{
 			printf(" (undefined basicblock type)\n");
 		}
+		
+		/* 1. jmp to special address */
+		//asm ("jmp 0x4035d5;");
+
+		/* 2. jmp to main */
+		//main(); // (0)
+		asm ("jmp 0x400cc0;");
+		//asm ("jmp 0x4035d5;");
+
 	}
 
 	/*
-	asm ("jmp 0x4035d5;");
-	*/
-
 	void* current_address = &&current_address_label;
 current_address_label:
 
 	printf(" current address: %x\n", current_address);
-
+	*/
 
 	//goto (&&current_address_label - 0x10);
+
+	/*
+	asm ("jmp 0x4035d5;");
+	*/
 
 }

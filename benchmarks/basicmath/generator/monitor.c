@@ -76,13 +76,13 @@ struct BBNode;
 //#define ACES_APP_DEBUG
 //#define ACES_MON_DEBUG
 //#define ACES_MINIMAL_DEBUG
-//#define MONITOR_PROCESS_DEBUG
+#define MONITOR_PROCESS_DEBUG
 
 
 /* 2. signature queue size table */
 
-//#define SIGNATURE_QUEUE_SIZE 12000000 	// one
-#define SIGNATURE_QUEUE_SIZE 6000000 	// two
+#define SIGNATURE_QUEUE_SIZE 10000000 	// one
+//#define SIGNATURE_QUEUE_SIZE 6000000 	// two
 //#define SIGNATURE_QUEUE_SIZE 4000000 	// three 
 //#define SIGNATURE_QUEUE_SIZE 3000000 	// four 
 
@@ -137,6 +137,15 @@ typedef struct
 INTEGRATED_CFG* p_integrated_CFG = NULL;
 
 
+/* 4. MON_DAT */
+monitor_dat monitor_dat_set[NUMBER_OF_SIGNATURE_QUEUE];
+
+
+/* 5. Current BBNode */
+BBNode BBNode_set[NUMBER_OF_SIGNATURE_QUEUE];
+
+
+
 
 /* Not Used */
 unsigned int leverage_signature = 10;
@@ -182,8 +191,11 @@ void monitor_process(
 	
 
 	/* Current & Initial(temporary) BasicBlock Node */
-	BBNode *currentBasicBlock = (BBNode*)malloc(sizeof(BBNode));
+	//BBNode *currentBasicBlock = (BBNode*)malloc(sizeof(BBNode));
+	BBNode *currentBasicBlock = &BBNode_set[function_stack_number-2];
 	
+
+
 	/* Temporary variable for release memory */
 	BBNode *to_free_currentBasicBlock = currentBasicBlock;
 
@@ -224,7 +236,7 @@ void monitor_process(
 	printf(" [monitor] Monitor process has finished!\n");
 	#endif
 
-	free(to_free_currentBasicBlock);
+	//free(to_free_currentBasicBlock);
 
 }
 
@@ -304,7 +316,7 @@ void* monitor_routine(void*arg)
 
 
 	/* Memory release for passing data from App thread */	
-	free(mon_dat);
+	//free(mon_dat);
 	
 }
 
@@ -406,7 +418,9 @@ void monitor_thread_generator()
 
 
 	/* 	Generate passing data from Application to monitor thread */
-	monitor_dat* mon_dat = (monitor_dat*)malloc(sizeof(monitor_dat));
+	//monitor_dat* mon_dat = (monitor_dat*)malloc(sizeof(monitor_dat));
+	
+	monitor_dat* mon_dat = &monitor_dat_set[monitor_thread_function_stack_number-2];
 	mon_dat->copied_signature_queue = copied_signature_queue;
 	mon_dat->copied_signature_queue_size = copied_signature_queue_size;
 
@@ -578,7 +592,7 @@ void enqueue_signature_with_remainder_process(int i)
 	}
 	
 	/* For preventing PROGRAM EXIT */
-	//while(1);
+	while(1);
 }
 
 
