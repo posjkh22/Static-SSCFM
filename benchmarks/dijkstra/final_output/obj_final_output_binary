@@ -47,13 +47,14 @@ Disassembly of section .note.gnu.build-id:
   40027e:	00 00                	add    %al,(%rax)
   400280:	47                   	rex.RXB
   400281:	4e 55                	rex.WRX push %rbp
-  400283:	00 0d c5 03 53 4b    	add    %cl,0x4b5303c5(%rip)        # 4b93064e <_end+0x47924cce>
-  400289:	4a 8d 25 fb 9e 0f 10 	rex.WX lea 0x100f9efb(%rip),%rsp        # 104fa18b <_end+0xc4ee80b>
-  400290:	77 ee                	ja     400280 <_init-0x800>
-  400292:	23 e2                	and    %edx,%esp
-  400294:	06                   	(bad)  
-  400295:	da f1                	(bad)  
-  400297:	96                   	xchg   %eax,%esi
+  400283:	00 38                	add    %bh,(%rax)
+  400285:	3a f3                	cmp    %bl,%dh
+  400287:	66 9d                	popfw  
+  400289:	92                   	xchg   %eax,%edx
+  40028a:	6b 1c ab fc          	imul   $0xfffffffc,(%rbx,%rbp,4),%ebx
+  40028e:	a1 67 f1 eb 00 ed 59 	movabs 0x3b0f59ed00ebf167,%eax
+  400295:	0f 3b 
+  400297:	07                   	(bad)  
 
 Disassembly of section .gnu.hash:
 
@@ -2944,7 +2945,7 @@ Disassembly of section .text:
   402d6f:	eb 0a                	jmp    402d7b <CFE_INJECTION+0x10d>
   402d71:	bf 1a 39 40 00       	mov    $0x40391a,%edi
   402d76:	e8 85 dd ff ff       	callq  400b00 <puts@plt>
-  402d7b:	e9 4a e3 ff ff       	jmpq   4010ca <dijkstra+0xda>
+  402d7b:	e9 58 e6 ff ff       	jmpq   4013d8 <main+0x118>
   402d80:	eb 01                	jmp    402d83 <CFE_INJECTION+0x115>
   402d82:	90                   	nop
   402d83:	c9                   	leaveq 
