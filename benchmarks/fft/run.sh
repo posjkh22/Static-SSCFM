@@ -89,7 +89,8 @@ $FINAL_OUTPUT/final_output_binary
 
 elif [ $1 = "eval" ]; then
 
-rm -f detected.rst
+#rm -f detected.rst
+#rm -f Not-detected.rst
 
 
 i=1

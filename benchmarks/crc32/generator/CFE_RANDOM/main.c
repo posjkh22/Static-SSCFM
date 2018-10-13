@@ -2,8 +2,7 @@
 #include <stdio.h>
 #include <time.h>
 
-#define FROM	0x400d40
-#define TO		0x401000 - 16
+#include "../benchmark_meta_data.h"
 
 int main()
 {

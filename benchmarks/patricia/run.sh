@@ -83,14 +83,14 @@ echo
 echo
 echo $echo_start$run$echo_end
 echo
-$BENCH_MARK_FOLDER/$BENCH_MARK large.udp
-$FINAL_OUTPUT/final_output_binary large.udp
+$BENCH_MARK_FOLDER/$BENCH_MARK 
+$FINAL_OUTPUT/final_output_binary 
 
 
 
 elif [ $1 = "eval" ]; then
 
-rm -f detected.rst
+#rm -f detected.rst
 
 
 i=1
@@ -157,7 +157,7 @@ echo
 
 
 echo " Step $i."
-$FINAL_OUTPUT/final_output_binary
+$FINAL_OUTPUT/final_output_binary 
 i=$(($i+1))
 	
 done

@@ -153,6 +153,7 @@ monitor_dat monitor_dat_set[NUMBER_OF_SIGNATURE_QUEUE];
 BBNode BBNode_set[NUMBER_OF_SIGNATURE_QUEUE];
 
 
+int monitor_finish = 0;
 
 
 /* Not Used */
@@ -245,6 +246,13 @@ void monitor_process(
 	#endif
 
 	//free(to_free_currentBasicBlock);
+
+	/* monitor finish flag on */
+	if(monitor_process_num == NUMBER_OF_SIGNATURE_QUEUE)
+	{
+		monitor_finish = 1;
+		printf(" [monitor] monitor process for entire program has finished!\n");
+	}
 
 }
 
@@ -610,7 +618,16 @@ void enqueue_signature_with_remainder_process(int i)
 	}
 	
 	/* For preventing PROGRAM EXIT */
-	//while(1);
+	while(!monitor_finish);
+	
+
+
+	/* Not detected cases */
+	FILE* F = fopen("Not-detected.rst", "a");
+
+	fprintf(F, "Not-detected\n");
+
+	fclose(F);
 }
 
 

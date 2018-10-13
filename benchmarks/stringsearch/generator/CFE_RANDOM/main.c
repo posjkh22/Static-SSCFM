@@ -2,8 +2,7 @@
 #include <stdio.h>
 #include <time.h>
 
-#define FROM	0x400e80
-#define TO		0x402020 - 16
+#include "../benchmark_meta_data.h"
 
 int main()
 {

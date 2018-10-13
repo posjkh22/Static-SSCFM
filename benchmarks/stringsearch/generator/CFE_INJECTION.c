@@ -13,6 +13,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+#include "benchmark_meta_data.h"
+
 int CFE_OCCUR_FLAG = 0;
 
 /*
@@ -51,14 +53,15 @@ void CFE_INJECTION(int i, int type)
 
 	if(flag == 0)
 	{
-		rand_value = rand() % 500000-1;
+		//rand_value = rand() % 1200000-1;
+		rand_value = rand() % CFE_INJECTION_BOUND-1;
 	
 		flag = 1;
 	}
 	
 	if(rand_value == i)
 	{
-		printf(" CFE_OCCURS: %d", i);
+		printf("      ==>>  CFE_OCCURS: %d", i);
 		CFE_OCCUR_FLAG = 1;
 
 		if(type == 0)
